@@ -40,6 +40,9 @@ class Tester(object):
         self.use_gpu = use_gpu
 
         if self.use_gpu:
+            gpu_num = torch.cuda.device_count()
+            if gpu_num > 1:
+                self.model = nn.DataParallel(self.model)
             self.model.cuda()
 
     def set_model(self, model):
@@ -51,6 +54,9 @@ class Tester(object):
     def set_use_gpu(self, use_gpu):
         self.use_gpu = use_gpu
         if self.use_gpu and self.model != None:
+            gpu_num = torch.cuda.device_count()
+            if gpu_num > 1:
+                self.model = nn.DataParallel(self.model)
             self.model.cuda()
 
     def to_var(self, x, use_gpu):

@@ -49,12 +49,15 @@ class Trainer(object):
 			'batch_y': self.to_var(data['batch_y'], self.use_gpu),
 			'mode': data['mode']
 		})
-		loss.backward()
+		loss.sum().backward()
 		self.optimizer.step()		 
-		return loss.item()
+		return loss.sum().item()
 
 	def run(self):
 		if self.use_gpu:
+			gpu_num = torch.cuda.device_count()
+			if gpu_num > 1:
+				self.model = nn.DataParallel(self.model)
 			self.model.cuda()
 
 		if self.optimizer != None:
