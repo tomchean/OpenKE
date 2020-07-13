@@ -58,6 +58,7 @@ class Trainer(object):
 			gpu_num = torch.cuda.device_count()
 			if gpu_num > 1:
 				self.model = nn.DataParallel(self.model)
+				self.model.adjust_batch_size(gpu_num)
 			self.model.cuda()
 
 		if self.optimizer != None:

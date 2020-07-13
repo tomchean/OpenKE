@@ -43,6 +43,7 @@ class Tester(object):
             gpu_num = torch.cuda.device_count()
             if gpu_num > 1:
                 self.model = nn.DataParallel(self.model)
+                self.model.adjust_batch_size(gpu_num)
             self.model.cuda()
 
     def set_model(self, model):
