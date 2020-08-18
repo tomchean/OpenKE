@@ -4,8 +4,10 @@ from __future__ import print_function
 
 from .TrainDataLoader import TrainDataLoader
 from .TestDataLoader import TestDataLoader
+from .StreamDataLoader import StreamDataLoader
 
 __all__ = [
 	'TrainDataLoader',
-	'TestDataLoader'
+	'TestDataLoader',
+        'StreamDataLoader'
 ]

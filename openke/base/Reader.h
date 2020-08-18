@@ -7,11 +7,24 @@
 #include <iostream>
 #include <cmath>
 
+// freqEnt means entity appear times
+// freqRel means relation appear times
 INT *freqRel, *freqEnt;
+
+// lefHead means entity start index sort by head
+// rigHead means entity end index sort by head
+// lefTail means entity start index sort by tail
+// rigTail means entity end index sort by tail
+// lefRel means entity start index sort by relation 
+// rigRel means entity end index sort by relation
 INT *lefHead, *rigHead;
 INT *lefTail, *rigTail;
 INT *lefRel, *rigRel;
+
+// left_mean means relation count / #(have relation in entity and entity is head)
+// right_mean means relation count / #(have relation in entity and entity is tail)
 REAL *left_mean, *right_mean;
+
 REAL *prob;
 
 Triple *trainList;
@@ -155,6 +168,7 @@ void importTrainFiles() {
 	}
 	for (INT i = 0; i < relationTotal; i++) {
 		left_mean[i] = freqRel[i] / left_mean[i];
+        printf("%f\n", left_mean[i]);
 		right_mean[i] = freqRel[i] / right_mean[i];
 	}
 }
