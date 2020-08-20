@@ -4,7 +4,7 @@ import ctypes
 import numpy as np
 
 import random
-from .Graph import Graph
+from Graph import Graph
 
 class TrainDataSampler(object):
 
