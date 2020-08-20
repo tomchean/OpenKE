@@ -115,7 +115,8 @@ class StreamDataLoader(object):
                     index += 1
                 else:
                     break
-
+        
+        self.graph.init(self.streamTripleTotal, self.streamList)
 
         if self.batch_size == None:
             self.batch_size = self.tripleTotal // self.nbatches
