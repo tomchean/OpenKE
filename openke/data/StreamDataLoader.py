@@ -4,7 +4,7 @@ import ctypes
 import numpy as np
 
 import random
-from Graph import Graph
+from .Graph import Graph
 
 class TrainDataSampler(object):
 
@@ -66,7 +66,6 @@ class StreamDataLoader(object):
         self.negative_rel = neg_rel
         self.sampling_mode = sampling_mode
         self.cross_sampling_flag = 0
-        self.read()
         self.graph = Graph()
         self.batch_index = 0
         self.stream_index = 0
@@ -74,6 +73,7 @@ class StreamDataLoader(object):
         self.streamTripleTotal = 0
         self.trainList = 0
         self.streamList = 0
+        self.read()
 
     def read(self):
         with open(self.rel_file, "r") as f:
@@ -200,7 +200,26 @@ class StreamDataLoader(object):
             self.stream_h[i] = self.streamList[index+i,0]
             self.stream_t[i] = self.streamList[index+i,1]
             self.stream_r[i] = self.streamList[index+i,2]
-
+        '''
+        # negative sampling
+        for i in range(1, self.negative_ent + 1):
+            neg_index = self.stream_size * i
+            rand = random.random()
+            if rand > 0.5:
+                # corrupt tail
+                cor_tail = self.corrupt(self.streamList[index+i,1])
+                for ii, neg_data in enumerate(cor_tail):
+                    self.stream_t[neg_index+ii] = neg_data
+                self.stream_h[neg_index:neg_index+self.stream_size] = self.streamList[index+i,0]
+                self.stream_r[neg_index:neg_index+self.stream_size] = self.streamList[index+i,2]
+            else :
+                # corrupt head
+                cor_head = self.corrupt(self.streamList[index+i,0])
+                for ii, neg_data in enumerate(cor_head):
+                    self.stream_h[neg_index+ii] = neg_data
+                self.stream_t[neg_index:neg_index+self.stream_size] = self.streamList[index+i,1]
+                self.stream_r[neg_index:neg_index+self.stream_size] = self.streamList[index+i,2]
+        '''
         return {
             "batch_h": self.stream_h,
             "batch_t": self.stream_t,

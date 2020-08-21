@@ -7,31 +7,33 @@ class Graph(object):
 
     def init(self, entityTotal, trainList):
 
+        tupleTotal = len(trainList)
+
         # head dic
         head_list = list()
-        for i in range(entityTotal):
+        for i in range(tupleTotal):
             head_list.append(trainList[i][0])
-        head_key = list(set(head_list))
+        head_key = [x for i, x in enumerate(head_list) if head_list.index(x) == i]
 
         self.head_dic = dict()
-        for i in head_key:
-            self.head_dic[i] = list()
-            for j in range(entityTotal):
+        for i in range(len(head_key)):
+            self.head_dic[head_key[i]] = list()
+            for j in range(tupleTotal):
                 if head_list[j] == head_key[i]:
-                    self.head_dic[i].append(j)
+                    self.head_dic[head_key[i]].append(trainList[j])
         
         # tail dic
         tail_list = list()
-        for i in range(entityTotal):
+        for i in range(tupleTotal):
             tail_list.append(trainList[i][2])
-        tail_key = list(set(tail_list))
+        tail_key = [x for i, x in enumerate(tail_list) if tail_list.index(x) == i]
 
         self.tail_dic = dict()
-        for i in tail_key:
-            self.tail_dic[i] = list()
-            for j in range(entityTotal):
+        for i in range(len(tail_key)):
+            self.tail_dic[tail_key[i]] = list()
+            for j in range(tupleTotal):
                 if tail_list[j] == tail_key[i]:
-                    self.tail_dic[i].append(j)
+                    self.tail_dic[tail_key[i]].append(trainList[j])
         
         # dic to numpy array
         # self.head_dic & self.tail_dic
