@@ -44,6 +44,23 @@ class StreamDataLoader(object):
         neg_ent = 1,
         neg_rel = 0):
         
+        base_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../release/Base.so"))
+        self.lib = ctypes.cdll.LoadLibrary(base_file)
+        """argtypes"""
+        self.lib.sampling.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64
+        ]
+
         self.in_path = in_path
         self.tri_file = tri_file
         self.ent_file = ent_file
@@ -66,6 +83,8 @@ class StreamDataLoader(object):
         self.negative_rel = neg_rel
         self.sampling_mode = sampling_mode
         self.cross_sampling_flag = 0
+
+
         self.graph = Graph()
         self.batch_index = 0
         self.stream_index = 0
@@ -73,16 +92,24 @@ class StreamDataLoader(object):
         self.streamTripleTotal = 0
         self.trainList = 0
         self.streamList = 0
+        
         self.read()
 
     def read(self):
-        with open(self.rel_file, "r") as f:
-            line = f.readline()
-            self.relTotal = int(line)
-
-        with open(self.ent_file, "r") as f:
-            line = f.readline()
-            self.entTotal = int(line)
+        if self.in_path != None:
+            self.lib.setInPath(ctypes.create_string_buffer(self.in_path.encode(), len(self.in_path) * 2))
+        else:
+            self.lib.setTrainPath(ctypes.create_string_buffer(self.tri_file.encode(), len(self.tri_file) * 2))
+            self.lib.setEntPath(ctypes.create_string_buffer(self.ent_file.encode(), len(self.ent_file) * 2))
+            self.lib.setRelPath(ctypes.create_string_buffer(self.rel_file.encode(), len(self.rel_file) * 2))
+        
+        self.lib.setBern(self.bern)
+        self.lib.setWorkThreads(self.work_threads)
+        self.lib.randReset()
+        self.lib.importTrainFiles()
+        self.relTotal = self.lib.getRelationTotal()
+        self.entTotal = self.lib.getEntityTotal()
+        self.tripleTotal = self.lib.getTrainTotal()
 
         with open(self.tri_file, "r") as f:
             line = f.readline()
@@ -132,8 +159,11 @@ class StreamDataLoader(object):
         self.batch_h = np.zeros(self.batch_seq_size, dtype=np.int64)
         self.batch_t = np.zeros(self.batch_seq_size, dtype=np.int64)
         self.batch_r = np.zeros(self.batch_seq_size, dtype=np.int64)
-
         self.batch_y = np.zeros(self.batch_seq_size, dtype=np.float32)
+        self.batch_h_addr = self.batch_h.__array_interface__["data"][0]
+        self.batch_t_addr = self.batch_t.__array_interface__["data"][0]
+        self.batch_r_addr = self.batch_r.__array_interface__["data"][0]
+        self.batch_y_addr = self.batch_y.__array_interface__["data"][0]
 
         self.stream_seq_size = self.stream_size * (1 + self.negative_ent + self.negative_rel)
         self.stream_h = np.zeros(self.stream_seq_size, dtype=np.int64)
@@ -146,6 +176,28 @@ class StreamDataLoader(object):
         # data's shape :(batchsize,)
         return [random.randint(0, self.entTotal-1) for i in range(self.batch_size)]
 
+    def sampling(self):
+        self.lib.sampling(
+            self.batch_h_addr,
+            self.batch_t_addr,
+            self.batch_r_addr,
+            self.batch_y_addr,
+            self.batch_size,
+            self.negative_ent,
+            self.negative_rel,
+            0,
+            self.filter,
+            0,
+            0
+        )
+        return {
+            "batch_h": self.batch_h, 
+            "batch_t": self.batch_t, 
+            "batch_r": self.batch_r, 
+            "batch_y": self.batch_y,
+            "mode": "normal"
+        }
+    '''
     def sampling(self):
         if self.batch_index == self.nbatches:
             self.batch_index = 0
@@ -186,6 +238,7 @@ class StreamDataLoader(object):
             "mode": "normal"
         }
 
+    '''
 
     # Todo : stream architecture
     def sampling_stream(self):
