@@ -168,7 +168,6 @@ void importTrainFiles() {
 	}
 	for (INT i = 0; i < relationTotal; i++) {
 		left_mean[i] = freqRel[i] / left_mean[i];
-        printf("%f\n", left_mean[i]);
 		right_mean[i] = freqRel[i] / right_mean[i];
 	}
 }

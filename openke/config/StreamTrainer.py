@@ -13,33 +13,35 @@ def shift(new, pre):
 class StreamTrainer(Trainer):
 
     def update(self):
-        stream1 = self.data_loader.sampling_stream()
-        
-        batch_h = stream1['batch_h']
-        batch_r = stream1['batch_r']
-        batch_t = stream1['batch_t']
-        stream = list()
-        for i in range(len(batch_h)):
-            stream.append([batch_h[i], batch_r[i], batch_t[i]])
-        stream = np.asarray(stream)
+        for i in range(self.data_loader.get_nstream()):
+            stream1 = self.data_loader.sampling_stream()
+            
+            batch_h = stream1['batch_h']
+            batch_r = stream1['batch_r']
+            batch_t = stream1['batch_t']
+            stream = list()
+            for i in range(len(batch_h)):
+                stream.append([batch_h[i], batch_r[i], batch_t[i]])
+            stream = np.asarray(stream)
 
-        #for data in self.data_loader.getStream():
-        loss = self.model({
-                'batch_h': self.to_var(stream[:,0], self.use_gpu),
-                'batch_t': self.to_var(stream[:,2], self.use_gpu),
-                'batch_r': self.to_var(stream[:,1], self.use_gpu),
-                'batch_y': self.to_var(stream1['batch_y'], self.use_gpu),
-                'mode': stream1['mode'],
-        })
-        loss.sum().backward()
+            #for data in self.data_loader.getStream():
+            loss = self.model({
+                    'batch_h': self.to_var(stream[:,0], self.use_gpu),
+                    'batch_t': self.to_var(stream[:,2], self.use_gpu),
+                    'batch_r': self.to_var(stream[:,1], self.use_gpu),
+                    'batch_y': self.to_var(stream1['batch_y'], self.use_gpu),
+                    'mode': stream1['mode'],
+            })
+            loss.sum().backward()
 
-        self._model = self.model.model
-        prev_emb_h = self._model.ent_embeddings # [stream[:,0]]
-        prev_emb_t = self._model.ent_embeddings # [stream[:,2]]
-        prev_emb_r = self._model.rel_embeddings # [stream[:,1]]
+            #self._model = self.model.model
+            #prev_emb_h = self._model.ent_embeddings # [stream[:,0]]
+            #prev_emb_t = self._model.ent_embeddings # [stream[:,2]]
+            #prev_emb_r = self._model.rel_embeddings # [stream[:,1]]
 
-        self.optimizer.step()
+            self.optimizer.step()
 
+        '''
         N1_head = self.data_loader.graph.head_dic
         N1_tail = self.data_loader.graph.tail_dic
 
@@ -60,3 +62,4 @@ class StreamTrainer(Trainer):
             # update relation embedding
             self._model.rel_embeddings[r] = gate(r, r) * (self._model.ent_embeddings[t] - self._model.ent_embeddings[h]) + (1 - gate(r, r)) * prev_emb_r[t]    
 
+        '''

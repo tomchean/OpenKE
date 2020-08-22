@@ -200,7 +200,7 @@ class StreamDataLoader(object):
             self.stream_h[i] = self.streamList[index+i,0]
             self.stream_t[i] = self.streamList[index+i,1]
             self.stream_r[i] = self.streamList[index+i,2]
-        '''
+
         # negative sampling
         for i in range(1, self.negative_ent + 1):
             neg_index = self.stream_size * i
@@ -219,7 +219,7 @@ class StreamDataLoader(object):
                     self.stream_h[neg_index+ii] = neg_data
                 self.stream_t[neg_index:neg_index+self.stream_size] = self.streamList[index+i,1]
                 self.stream_r[neg_index:neg_index+self.stream_size] = self.streamList[index+i,2]
-        '''
+
         return {
             "batch_h": self.stream_h,
             "batch_t": self.stream_t,
@@ -257,6 +257,9 @@ class StreamDataLoader(object):
         self.filter = filter
 
     """interfaces to get essential parameters"""
+
+    def get_nstream(self):
+        return self.nstreams
 
     def get_batch_size(self):
         return self.batch_size
