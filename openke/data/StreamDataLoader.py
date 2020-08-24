@@ -127,6 +127,8 @@ class StreamDataLoader(object):
                 else:
                     break
 
+        self.graph.init(self.tripleTotal, self.trainList)
+
         with open(self.stream_file, "r") as f:
             line = f.readline()
             self.streamTripleTotal = int(line)
@@ -143,7 +145,6 @@ class StreamDataLoader(object):
                 else:
                     break
         
-        self.graph.init(self.streamTripleTotal, self.streamList)
 
         if self.batch_size == None:
             self.batch_size = self.tripleTotal // self.nbatches
@@ -197,48 +198,6 @@ class StreamDataLoader(object):
             "batch_y": self.batch_y,
             "mode": "normal"
         }
-    '''
-    def sampling(self):
-        if self.batch_index == self.nbatches:
-            self.batch_index = 0
-
-        index = self.batch_index * self.batch_size 
-        self.batch_index += 1
-
-        # positive sampling
-        for i in range(self.batch_size):
-            self.batch_h[i] = self.trainList[index+i,0]
-            self.batch_t[i] = self.trainList[index+i,1]
-            self.batch_r[i] = self.trainList[index+i,2]
-
-        # negative sampling
-        for i in range(1, self.negative_ent + 1):
-            neg_index = self.batch_size * i
-            rand = random.random()
-            if rand > 0.5:
-                # corrupt tail
-                cor_tail = self.corrupt(self.trainList[index+i,1])
-                for ii, neg_data in enumerate(cor_tail):
-                    self.batch_t[neg_index+ii] = neg_data
-                self.batch_h[neg_index:neg_index+self.batch_size] = self.trainList[index+i,0]
-                self.batch_r[neg_index:neg_index+self.batch_size] = self.trainList[index+i,2]
-            else :
-                # corrupt head
-                cor_head = self.corrupt(self.trainList[index+i,0])
-                for ii, neg_data in enumerate(cor_head):
-                    self.batch_h[neg_index+ii] = neg_data
-                self.batch_t[neg_index:neg_index+self.batch_size] = self.trainList[index+i,1]
-                self.batch_r[neg_index:neg_index+self.batch_size] = self.trainList[index+i,2]
-
-        return {
-            "batch_h": self.batch_h,
-            "batch_t": self.batch_t,
-            "batch_r": self.batch_r,
-            "batch_y": self.batch_y,
-            "mode": "normal"
-        }
-
-    '''
 
     # Todo : stream architecture
     def sampling_stream(self):

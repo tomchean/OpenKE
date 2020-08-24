@@ -20,9 +20,6 @@ class NegativeSampling(Strategy):
                 negative_score = negative_score.view(-1, self.batch_size).permute(1, 0)
                 return negative_score
 
-        def adjust_batch_size(self, factor):
-                self.batch_size = self.batch_size // factor
-
         def forward(self, data):
                 score = self.model(data)
                 p_score = self._get_positive_score(score)
