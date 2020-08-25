@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from tqdm import tqdm
 
 def gate(x, y):
     return 0.5
@@ -13,7 +14,6 @@ def shift(new, pre):
 class StreamTrainer(Trainer):
 
     def update(self):
-
         res = 0.0
         for i in range(self.data_loader.get_nstream()):
             data = self.data_loader.sampling_stream()
@@ -30,4 +30,11 @@ class StreamTrainer(Trainer):
             self.optimizer.step()
             res += loss.item()
 
-        print(res)
+        return res
+
+    def run_stream(self, iteration=1):
+        print("start train stream file")
+        training_range = tqdm(range(iteration))
+        for epoch in training_range:
+                res = self.update()
+                training_range.set_description("Epoch %d | loss: %f" % (epoch, res))

@@ -34,7 +34,6 @@ class StreamDataLoader(object):
         rel_file = None,
         stream_file = None,
         batch_size = None,
-        stream_size = None,
         nbatches = None,
         nstreams = None,
         threads = 8,
@@ -91,7 +90,6 @@ class StreamDataLoader(object):
         self.nbatches = nbatches
         self.nstreams = nstreams
         self.batch_size = batch_size
-        self.stream_size = stream_size
         self.bern = bern_flag
         self.filter = filter_flag
         self.negative_ent = neg_ent
@@ -167,10 +165,8 @@ class StreamDataLoader(object):
         if self.nbatches == None:
             self.nbatches = self.tripleTotal // self.batch_size
 
-        if self.stream_size == None:
-            self.stream_size = self.streamTripleTotal // self.nstreams
         if self.nstreams == None:
-            self.nstreams = self.streamTripleTotal // self.stream_size
+            self.nstreams = self.streamTripleTotal // self.batch_size
 
         self.batch_seq_size = self.batch_size * (1 + self.negative_ent + self.negative_rel)
         self.batch_h = np.zeros(self.batch_seq_size, dtype=np.int64)
@@ -181,17 +177,6 @@ class StreamDataLoader(object):
         self.batch_t_addr = self.batch_t.__array_interface__["data"][0]
         self.batch_r_addr = self.batch_r.__array_interface__["data"][0]
         self.batch_y_addr = self.batch_y.__array_interface__["data"][0]
-
-        self.stream_seq_size = self.stream_size * (1 + self.negative_ent + self.negative_rel)
-        self.stream_h = np.zeros(self.stream_seq_size, dtype=np.int64)
-        self.stream_t = np.zeros(self.stream_seq_size, dtype=np.int64)
-        self.stream_r = np.zeros(self.stream_seq_size, dtype=np.int64)
-        self.stream_y = np.zeros(self.stream_seq_size, dtype=np.float32)
-
-
-    def corrupt(self, data):
-        # data's shape :(batchsize,)
-        return [random.randint(0, self.entTotal-1) for i in range(self.batch_size)]
 
     def sampling(self):
         self.lib.sampling(
@@ -219,7 +204,7 @@ class StreamDataLoader(object):
         if self.stream_index == self.nstreams:
             self.stream_index = 0
 
-        index = self.stream_index * self.stream_size 
+        index = self.stream_index * self.batch_size
         self.stream_index += 1
 
         self.lib.sampling_stream(
@@ -243,41 +228,6 @@ class StreamDataLoader(object):
             "batch_y": self.batch_y,
             "mode": "normal"
         }
-
-        '''
-        # positive sampling
-        for i in range(self.stream_size):
-            self.stream_h[i] = self.streamList[index+i,0]
-            self.stream_t[i] = self.streamList[index+i,1]
-            self.stream_r[i] = self.streamList[index+i,2]
-
-        # negative sampling
-        for i in range(1, self.negative_ent + 1):
-            neg_index = self.stream_size * i
-            rand = random.random()
-            if rand > 0.5:
-                # corrupt tail
-                cor_tail = self.corrupt(self.streamList[index+i,1])
-                for ii, neg_data in enumerate(cor_tail):
-                    self.stream_t[neg_index+ii] = neg_data
-                self.stream_h[neg_index:neg_index+self.stream_size] = self.streamList[index+i,0]
-                self.stream_r[neg_index:neg_index+self.stream_size] = self.streamList[index+i,2]
-            else :
-                # corrupt head
-                cor_head = self.corrupt(self.streamList[index+i,0])
-                for ii, neg_data in enumerate(cor_head):
-                    self.stream_h[neg_index+ii] = neg_data
-                self.stream_t[neg_index:neg_index+self.stream_size] = self.streamList[index+i,1]
-                self.stream_r[neg_index:neg_index+self.stream_size] = self.streamList[index+i,2]
-
-        return {
-            "batch_h": self.stream_h,
-            "batch_t": self.stream_t,
-            "batch_r": self.stream_r,
-            "batch_y": self.stream_y,
-            "mode": "normal"
-        }
-        '''
 
 
     """interfaces to set essential parameters"""
