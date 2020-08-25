@@ -102,6 +102,7 @@ INT entityTotal = 0;
 INT tripleTotal = 0;
 INT testTotal = 0;
 INT trainTotal = 0;
+INT streamTotal = 0;
 INT validTotal = 0;
 
 extern "C"
@@ -122,6 +123,11 @@ INT getTripleTotal() {
 extern "C"
 INT getTrainTotal() {
 	return trainTotal;
+}
+
+extern "C"
+INT getStreamTotal() {
+	return streamTotal;
 }
 
 extern "C"

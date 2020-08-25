@@ -61,6 +61,21 @@ class StreamDataLoader(object):
                 ctypes.c_int64
         ]
 
+        self.lib.sampling_stream.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64,
+                ctypes.c_int64
+        ]
+
         self.in_path = in_path
         self.tri_file = tri_file
         self.ent_file = ent_file
@@ -107,6 +122,7 @@ class StreamDataLoader(object):
         self.lib.setWorkThreads(self.work_threads)
         self.lib.randReset()
         self.lib.importTrainFiles()
+        self.lib.importStreamFiles()
         self.relTotal = self.lib.getRelationTotal()
         self.entTotal = self.lib.getEntityTotal()
         self.tripleTotal = self.lib.getTrainTotal()
@@ -127,7 +143,7 @@ class StreamDataLoader(object):
                 else:
                     break
 
-        self.graph.init(self.tripleTotal, self.trainList)
+        #self.graph.init(self.tripleTotal, self.trainList)
 
         with open(self.stream_file, "r") as f:
             line = f.readline()
@@ -199,7 +215,6 @@ class StreamDataLoader(object):
             "mode": "normal"
         }
 
-    # Todo : stream architecture
     def sampling_stream(self):
         if self.stream_index == self.nstreams:
             self.stream_index = 0
@@ -207,6 +222,29 @@ class StreamDataLoader(object):
         index = self.stream_index * self.stream_size 
         self.stream_index += 1
 
+        self.lib.sampling_stream(
+            self.batch_h_addr,
+            self.batch_t_addr,
+            self.batch_r_addr,
+            self.batch_y_addr,
+            self.batch_size,
+            index,
+            self.negative_ent,
+            self.negative_rel,
+            0,
+            self.filter,
+            0,
+            0
+        )
+        return {
+            "batch_h": self.batch_h, 
+            "batch_t": self.batch_t, 
+            "batch_r": self.batch_r, 
+            "batch_y": self.batch_y,
+            "mode": "normal"
+        }
+
+        '''
         # positive sampling
         for i in range(self.stream_size):
             self.stream_h[i] = self.streamList[index+i,0]
@@ -239,6 +277,7 @@ class StreamDataLoader(object):
             "batch_y": self.stream_y,
             "mode": "normal"
         }
+        '''
 
 
     """interfaces to set essential parameters"""

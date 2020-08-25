@@ -162,6 +162,84 @@ INT corrupt_rel(INT id, INT h, INT t, INT r, bool p = false, bool filter_flag = 
 	return tmp + lef - ll + 1;
 }
 
+INT s_corrupt_head(INT id, INT h, INT r, bool filter_flag = true) {
+	INT lef, rig, mid, ll, rr;
+	if (not filter_flag) {
+		INT tmp = rand_max(id, entityTotal - 1);
+		if (tmp < h)
+			return tmp;
+		else
+			return tmp + 1;
+	}
+	lef = slefHead[h] - 1;
+	rig = srigHead[h];
+	while (lef + 1 < rig) {
+		mid = (lef + rig) >> 1;
+		if (streamHead[mid].r >= r) rig = mid; else
+		lef = mid;
+	}
+	ll = rig;
+	lef = slefHead[h];
+	rig = srigHead[h] + 1;
+	while (lef + 1 < rig) {
+		mid = (lef + rig) >> 1;
+		if (streamHead[mid].r <= r) lef = mid; else
+		rig = mid;
+	}
+	rr = lef;
+	INT tmp = rand_max(id, entityTotal - (rr - ll + 1));
+	if (tmp < streamHead[ll].t) return tmp;
+	if (tmp > streamHead[rr].t - rr + ll - 1) return tmp + rr - ll + 1;
+	lef = ll, rig = rr + 1;
+	while (lef + 1 < rig) {
+		mid = (lef + rig) >> 1;
+		if (streamHead[mid].t - mid + ll - 1 < tmp)
+			lef = mid;
+		else 
+			rig = mid;
+	}
+	return tmp + lef - ll + 1;
+}
+
+INT s_corrupt_tail(INT id, INT t, INT r, bool filter_flag = true) {
+	INT lef, rig, mid, ll, rr;
+	if (not filter_flag) {
+		INT tmp = rand_max(id, entityTotal - 1);
+		if (tmp < t)
+			return tmp;
+		else
+			return tmp + 1;
+	}
+	lef = slefTail[t] - 1;
+	rig = srigTail[t];
+	while (lef + 1 < rig) {
+		mid = (lef + rig) >> 1;
+		if (streamTail[mid].r >= r) rig = mid; else
+		lef = mid;
+	}
+	ll = rig;
+	lef = slefTail[t];
+	rig = srigTail[t] + 1;
+	while (lef + 1 < rig) {
+		mid = (lef + rig) >> 1;
+		if (streamTail[mid].r <= r) lef = mid; else
+		rig = mid;
+	}
+	rr = lef;
+	INT tmp = rand_max(id, entityTotal - (rr - ll + 1));
+	if (tmp < streamTail[ll].h) return tmp;
+	if (tmp > streamTail[rr].h - rr + ll - 1) return tmp + rr - ll + 1;
+	lef = ll, rig = rr + 1;
+	while (lef + 1 < rig) {
+		mid = (lef + rig) >> 1;
+		if (streamTail[mid].h - mid + ll - 1 < tmp)
+			lef = mid;
+		else 
+			rig = mid;
+	}
+	return tmp + lef - ll + 1;
+}
+
 
 bool _find(INT h, INT t, INT r) {
     INT lef = 0;

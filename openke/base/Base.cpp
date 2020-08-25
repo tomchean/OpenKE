@@ -60,6 +60,9 @@ void randReset();
 extern "C"
 void importTrainFiles();
 
+extern "C"
+void importStreamFiles();
+
 struct Parameter {
 	INT id;
 	INT *batch_h;
@@ -73,6 +76,7 @@ struct Parameter {
 	bool val_loss;
 	INT mode;
 	bool filter_flag;
+    INT offset;
 };
 
 void* getBatch(void* con) {
@@ -158,6 +162,90 @@ void* getBatch(void* con) {
 	pthread_exit(NULL);
 }
 
+void* getStreamBatch(void* con) {
+	Parameter *para = (Parameter *)(con);
+	INT id = para -> id;
+	INT *batch_h = para -> batch_h;
+	INT *batch_t = para -> batch_t;
+	INT *batch_r = para -> batch_r;
+	REAL *batch_y = para -> batch_y;
+	INT batchSize = para -> batchSize;
+	INT negRate = para -> negRate;
+	INT negRelRate = para -> negRelRate;
+    INT offset = para -> offset;
+	bool p = para -> p;
+	bool val_loss = para -> val_loss;
+	INT mode = para -> mode;
+	bool filter_flag = para -> filter_flag;
+	INT lef, rig;
+	if (batchSize % workThreads == 0) {
+		lef = id * (batchSize / workThreads);
+		rig = (id + 1) * (batchSize / workThreads);
+	} else {
+		lef = id * (batchSize / workThreads + 1);
+		rig = (id + 1) * (batchSize / workThreads + 1);
+		if (rig > batchSize) rig = batchSize;
+	}
+	REAL prob = 500;
+	if (val_loss == false) {
+		for (INT batch = lef; batch < rig; batch++) {
+			INT i = offset + batch;
+			batch_h[batch] = streamList[i].h;
+			batch_t[batch] = streamList[i].t;
+			batch_r[batch] = streamList[i].r;
+			batch_y[batch] = 1;
+			INT last = batchSize;
+			for (INT times = 0; times < negRate; times ++) {
+				if (mode == 0){
+					if (bernFlag)
+						prob = 1000 * sright_mean[streamList[i].r] / (sright_mean[streamList[i].r] + sleft_mean[streamList[i].r]);
+					if (randd(id) % 1000 < prob) {
+						batch_h[batch + last] = streamList[i].h;
+						batch_t[batch + last] = s_corrupt_head(id, streamList[i].h, streamList[i].r);
+						batch_r[batch + last] = streamList[i].r;
+					} else {
+						batch_h[batch + last] = s_corrupt_tail(id, streamList[i].t, streamList[i].r);
+						batch_t[batch + last] = streamList[i].t;
+						batch_r[batch + last] = streamList[i].r;
+					}
+					batch_y[batch + last] = -1;
+					last += batchSize;
+				} else {
+					if(mode == -1){
+						batch_h[batch + last] = s_corrupt_tail(id, streamList[i].t, streamList[i].r);
+						batch_t[batch + last] = streamList[i].t;
+						batch_r[batch + last] = streamList[i].r;
+					} else {
+						batch_h[batch + last] = streamList[i].h;
+						batch_t[batch + last] = s_corrupt_head(id, streamList[i].h, streamList[i].r);
+						batch_r[batch + last] = streamList[i].r;
+					}
+					batch_y[batch + last] = -1;
+					last += batchSize;
+				}
+			}
+			for (INT times = 0; times < negRelRate; times++) {
+				batch_h[batch + last] = streamList[i].h;
+				batch_t[batch + last] = streamList[i].t;
+				batch_r[batch + last] = corrupt_rel(id, streamList[i].h, streamList[i].t, streamList[i].r, p);
+				batch_y[batch + last] = -1;
+				last += batchSize;
+			}
+		}
+	}
+	else
+	{
+		for (INT batch = lef; batch < rig; batch++)
+		{
+			batch_h[batch] = validList[batch].h;
+			batch_t[batch] = validList[batch].t;
+			batch_r[batch] = validList[batch].r;
+			batch_y[batch] = 1;
+		}
+	}
+	pthread_exit(NULL);
+}
+
 extern "C"
 void sampling(
 		INT *batch_h, 
@@ -188,6 +276,46 @@ void sampling(
 		para[threads].mode = mode;
 		para[threads].filter_flag = filter_flag;
 		pthread_create(&pt[threads], NULL, getBatch, (void*)(para+threads));
+	}
+	for (INT threads = 0; threads < workThreads; threads++)
+		pthread_join(pt[threads], NULL);
+
+	free(pt);
+	free(para);
+}
+
+extern "C"
+void sampling_stream(
+		INT *batch_h, 
+		INT *batch_t, 
+		INT *batch_r, 
+		REAL *batch_y, 
+		INT batchSize, 
+        INT offset,
+		INT negRate = 1, 
+		INT negRelRate = 0, 
+		INT mode = 0,
+		bool filter_flag = true,
+		bool p = false, 
+		bool val_loss = false
+) {
+	pthread_t *pt = (pthread_t *)malloc(workThreads * sizeof(pthread_t));
+	Parameter *para = (Parameter *)malloc(workThreads * sizeof(Parameter));
+	for (INT threads = 0; threads < workThreads; threads++) {
+		para[threads].id = threads;
+		para[threads].batch_h = batch_h;
+		para[threads].batch_t = batch_t;
+		para[threads].batch_r = batch_r;
+		para[threads].batch_y = batch_y;
+		para[threads].batchSize = batchSize;
+		para[threads].negRate = negRate;
+		para[threads].negRelRate = negRelRate;
+		para[threads].p = p;
+		para[threads].val_loss = val_loss;
+		para[threads].mode = mode;
+		para[threads].filter_flag = filter_flag;
+		para[threads].offset = offset;
+		pthread_create(&pt[threads], NULL, getStreamBatch, (void*)(para+threads));
 	}
 	for (INT threads = 0; threads < workThreads; threads++)
 		pthread_join(pt[threads], NULL);

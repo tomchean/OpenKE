@@ -32,6 +32,17 @@ Triple *trainHead;
 Triple *trainTail;
 Triple *trainRel;
 
+
+INT *slefHead, *srigHead;
+INT *slefTail, *srigTail;
+INT *slefRel, *srigRel;
+REAL *sleft_mean, *sright_mean;
+
+Triple *streamList;
+Triple *streamHead;
+Triple *streamTail;
+Triple *streamRel;
+
 INT *testLef, *testRig;
 INT *validLef, *validRig;
 
@@ -60,6 +71,103 @@ void importProb(REAL temp){
         sum = 0;
     }
     fclose(fin);
+}
+
+extern "C"
+void importStreamFiles() {
+
+	printf("The toolkit is importing datasets.\n");
+	FILE *fin;
+	int tmp;
+
+    if (train_file == "")
+        fin = fopen((inPath + "stream2id.txt").c_str(), "r");
+    else
+        fin = fopen(train_file.c_str(), "r");
+	tmp = fscanf(fin, "%ld", &streamTotal);
+	streamList = (Triple *)calloc(streamTotal, sizeof(Triple));
+	streamHead = (Triple *)calloc(streamTotal, sizeof(Triple));
+	streamTail = (Triple *)calloc(streamTotal, sizeof(Triple));
+	streamRel = (Triple *)calloc(streamTotal, sizeof(Triple));
+
+	for (INT i = 0; i < streamTotal; i++) {
+		tmp = fscanf(fin, "%ld", &streamList[i].h);
+		tmp = fscanf(fin, "%ld", &streamList[i].t);
+		tmp = fscanf(fin, "%ld", &streamList[i].r);
+	}
+	fclose(fin);
+
+
+	streamHead[0] = streamTail[0] = streamRel[0] = streamList[0];
+	freqEnt[streamList[0].t] += 1;
+	freqEnt[streamList[0].h] += 1;
+	freqRel[streamList[0].r] += 1;
+
+	for (INT i = 1; i < streamTotal; i++) {
+		streamHead[i] = streamTail[i] = streamRel[i] = streamList[i];
+		freqEnt[streamList[i].t]++;
+		freqEnt[streamList[i].h]++;
+		freqRel[streamList[i].r]++;
+
+    }
+
+	std::sort(streamHead, streamHead + streamTotal, Triple::cmp_head);
+	std::sort(streamTail, streamTail + streamTotal, Triple::cmp_tail);
+	std::sort(streamRel, streamRel + streamTotal, Triple::cmp_rel);
+	printf("The total of stream triples is %ld.\n", streamTotal);
+
+	slefHead = (INT *)calloc(entityTotal, sizeof(INT));
+	srigHead = (INT *)calloc(entityTotal, sizeof(INT));
+	slefTail = (INT *)calloc(entityTotal, sizeof(INT));
+	srigTail = (INT *)calloc(entityTotal, sizeof(INT));
+	slefRel = (INT *)calloc(entityTotal, sizeof(INT));
+	srigRel = (INT *)calloc(entityTotal, sizeof(INT));
+
+	memset(srigHead, -1, sizeof(INT)*entityTotal);
+	memset(srigTail, -1, sizeof(INT)*entityTotal);
+	memset(srigRel, -1, sizeof(INT)*entityTotal);
+
+	for (INT i = 1; i < streamTotal; i++) {
+		if (streamTail[i].t != streamTail[i - 1].t) {
+			srigTail[streamTail[i - 1].t] = i - 1;
+			slefTail[streamTail[i].t] = i;
+		}
+		if (streamHead[i].h != streamHead[i - 1].h) {
+			srigHead[streamHead[i - 1].h] = i - 1;
+			slefHead[streamHead[i].h] = i;
+		}
+		if (streamRel[i].h != streamRel[i - 1].h) {
+			srigRel[streamRel[i - 1].h] = i - 1;
+			slefRel[streamRel[i].h] = i;
+		}
+	}
+
+	slefHead[streamHead[0].h] = 0;
+	srigHead[streamHead[streamTotal - 1].h] = streamTotal - 1;
+	slefTail[streamTail[0].t] = 0;
+	srigTail[streamTail[streamTotal - 1].t] = streamTotal - 1;
+	slefRel[streamRel[0].h] = 0;
+	srigRel[streamRel[streamTotal - 1].h] = streamTotal - 1;
+
+	sleft_mean = (REAL *)calloc(relationTotal,sizeof(REAL));
+	sright_mean = (REAL *)calloc(relationTotal,sizeof(REAL));
+
+	for (INT i = 0; i < entityTotal; i++) {
+		for (INT j = slefHead[i] + 1; j <= srigHead[i]; j++)
+			if (streamHead[j].r != streamHead[j - 1].r)
+				sleft_mean[streamHead[j].r] += 1.0;
+		if (slefHead[i] <= srigHead[i])
+			sleft_mean[streamHead[slefHead[i]].r] += 1.0;
+		for (INT j = slefTail[i] + 1; j <= srigTail[i]; j++)
+			if (streamTail[j].r != streamTail[j - 1].r)
+				sright_mean[streamTail[j].r] += 1.0;
+		if (slefTail[i] <= srigTail[i])
+			sright_mean[streamTail[slefTail[i]].r] += 1.0;
+	}
+	for (INT i = 0; i < relationTotal; i++) {
+		sleft_mean[i] = freqRel[i] / sleft_mean[i];
+		sright_mean[i] = freqRel[i] / sright_mean[i];
+	}
 }
 
 extern "C"
