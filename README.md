@@ -122,6 +122,8 @@ We have provided the hyper-parameters of some models to achieve the state-of-the
   train2id.txt: training file, the first line is the number of triples for training. Then the following lines are all in the format ***(e1, e2, rel)*** which indicates there is a relation ***rel*** between ***e1*** and ***e2*** .
   **Note that train2id.txt contains ids from entitiy2id.txt and relation2id.txt instead of the names of the entities and relations. If you use your own datasets, please check the format of your training file. Files in the wrong format may cause segmentation fault.**
 
+  stream2id.txt: training stream file, the first line is the number of triples for stream training. Then the following lines are all in the format ***(e1, e2, rel)*** which indicates there is a relation ***rel*** between ***e1*** and ***e2*** , tuples are ordered by build time.
+
   entity2id.txt: all entities and corresponding ids, one per line. The first line is the number of entities.
 
   relation2id.txt: all relations and corresponding ids, one per line. The first line is the number of relations.
