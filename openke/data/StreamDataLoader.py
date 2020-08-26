@@ -141,7 +141,7 @@ class StreamDataLoader(object):
                 else:
                     break
 
-        #self.graph.init(self.tripleTotal, self.trainList)
+        self.graph.init(self.tripleTotal, self.trainList)
 
         with open(self.stream_file, "r") as f:
             line = f.readline()

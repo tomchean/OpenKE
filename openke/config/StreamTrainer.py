@@ -17,7 +17,6 @@ class StreamTrainer(Trainer):
         res = 0.0
         for i in range(self.data_loader.get_nstream()):
             data = self.data_loader.sampling_stream()
-
             self.optimizer.zero_grad()
             loss = self.model({
                     'batch_h': self.to_var(data['batch_h'], self.use_gpu),
@@ -29,6 +28,10 @@ class StreamTrainer(Trainer):
             loss.backward()
             self.optimizer.step()
             res += loss.item()
+
+            # Todo : implement Refresh and Percolate
+
+            # Todo : update graph
 
         return res
 
